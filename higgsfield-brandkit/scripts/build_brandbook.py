@@ -487,8 +487,19 @@ def asset_source(value: Any, label: str) -> str:
     return source
 
 
+def find_imagemagick() -> str | None:
+    """Return ImageMagick's binary, ignoring Windows' unrelated System32 convert.exe."""
+    found = shutil.which("magick")
+    if found:
+        return found
+    found = shutil.which("convert")
+    if found and os.name == "nt" and Path(found).parent.name.lower() in {"system32", "syswow64"}:
+        return None
+    return found
+
+
 def convert_png(data: bytes, width: int, height: int, fit: str) -> bytes:
-    binary = shutil.which("magick") or shutil.which("convert")
+    binary = find_imagemagick()
     if not binary:
         raise RuntimeError("ImageMagick is unavailable in the local environment")
     suffix = ".svg" if b"<svg" in data[:1024].lower() else ".img"

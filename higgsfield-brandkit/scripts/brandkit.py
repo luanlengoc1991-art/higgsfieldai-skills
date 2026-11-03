@@ -1014,10 +1014,21 @@ def strip_full_canvas_background(svg: str) -> tuple[str, bool]:
     return svg, False
 
 
+def find_imagemagick() -> str | None:
+    """Return ImageMagick's binary, ignoring Windows' unrelated System32 convert.exe."""
+    found = shutil.which("magick")
+    if found:
+        return found
+    found = shutil.which("convert")
+    if found and os.name == "nt" and Path(found).parent.name.lower() in {"system32", "syswow64"}:
+        return None
+    return found
+
+
 def write_logo_pair(
     output_dir: Path, stem: str, suffix: str, svg: str
 ) -> dict[str, Any]:
-    image_magick = shutil.which("magick") or shutil.which("convert")
+    image_magick = find_imagemagick()
     rsvg_convert = shutil.which("rsvg-convert")
     if not image_magick:
         raise RuntimeError("ImageMagick is unavailable in the local environment")
