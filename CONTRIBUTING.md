@@ -45,6 +45,8 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) so future au
 
 ## PR checklist
 
+Run `./scripts/validate.sh` first: it mirrors the CI checks (items 1–5) and runs every faceless-video helper test. It needs Python 3 with `pyyaml pillow numpy` and FFmpeg; a repo-local `.venv` is picked up automatically.
+
 Before merging, confirm:
 
 1. **Frontmatter is valid.** YAML parses. `name` matches the directory exactly. `version` is set. `description` includes Use-when triggers, Chain rules, and a NOT-for boundary.

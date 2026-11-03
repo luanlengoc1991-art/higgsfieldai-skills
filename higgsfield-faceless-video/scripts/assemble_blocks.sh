@@ -77,7 +77,7 @@ for b in ffmpeg ffprobe curl awk python3; do command -v "$b" >/dev/null 2>&1 || 
 n=${#ARGS[@]}
 (( n >= 2 && n % 2 == 0 )) || { echo "ERROR: pass clip/audio PAIRS (clip1 audio1 clip2 audio2 ...)" >&2; exit 1; }
 
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"; trap 'rm -rf "$TMP"' EXIT
 fetch(){ if [[ "$1" == http://* || "$1" == https://* ]]; then curl -fsSL "$1" -o "$2"; else [[ -f "$1" ]] || { echo "ERROR: not found: $1" >&2; exit 1; }; cp "$1" "$2"; fi; }
 
 pairs=$(( n / 2 ))

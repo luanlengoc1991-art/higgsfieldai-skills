@@ -8,6 +8,8 @@ on:
       - ".codex-plugin/**"
       - ".cursor-plugin/**"
       - "VERSION"
+      - "setup"
+      - "scripts/**"
       - ".github/workflows/validate-skills.yml"
   push:
     branches: [main]
@@ -17,6 +19,8 @@ on:
       - ".codex-plugin/**"
       - ".cursor-plugin/**"
       - "VERSION"
+      - "setup"
+      - "scripts/**"
       - ".github/workflows/validate-skills.yml"
 
 jobs:
@@ -31,8 +35,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install PyYAML
-        run: pip install pyyaml --quiet
+      - name: Install Python packages and FFmpeg
+        run: |
+          pip install pyyaml pillow numpy --quiet
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
 
       - name: Validate frontmatter and name
         run: |
@@ -174,8 +180,8 @@ jobs:
       - name: Verify video helpers
         run: |
           set -euo pipefail
-          bash -n higgsfield-faceless-video/scripts/*.sh
-          python3 higgsfield-faceless-video/scripts/tests/test_captions.py
-          python3 higgsfield-faceless-video/scripts/tests/test_channel.py
-          python3 higgsfield-faceless-video/scripts/tests/test_song.py
-          python3 higgsfield-faceless-video/scripts/tests/test_timeline.py
+          bash -n higgsfield-faceless-video/scripts/*.sh setup scripts/*.sh
+          for t in higgsfield-faceless-video/scripts/tests/test_*.py; do
+            echo "→ $t"
+            python3 "$t"
+          done

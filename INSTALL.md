@@ -35,7 +35,7 @@ Works with Claude Code, Cursor, Codex, and any agent that picks up `~/.<agent>/s
 npx skills add higgsfield-ai/skills
 ```
 
-Installs all eight skills. The `skills` CLI auto-detects the host agent and writes each skill to the right path.
+Installs all nine skills. The `skills` CLI auto-detects the host agent and writes each skill to the right path.
 
 ## Option 2 — `gh skill install`
 
@@ -45,7 +45,7 @@ GitHub CLI v2.90+ extension. Same coverage as `npx skills`.
 gh skill install higgsfield-ai/skills
 ```
 
-Installs all eight skills.
+Installs all nine skills.
 
 ## Option 3 — Claude Code marketplace
 
@@ -56,7 +56,7 @@ Claude Code only. Inside Claude Code:
 /plugin install higgsfield@higgsfield
 ```
 
-Pulls the plugin manifest from `.claude-plugin/marketplace.json` and registers all eight skills, including `/higgsfield:higgsfield-brandkit`, `/higgsfield:higgsfield-youtube-thumbnail`, and `/higgsfield:higgsfield-websites`.
+Pulls the plugin manifest from `.claude-plugin/marketplace.json` and registers all nine skills, including `/higgsfield:higgsfield-brandkit`, `/higgsfield:higgsfield-youtube-thumbnail`, and `/higgsfield:higgsfield-websites`.
 
 ## Option 4 — Setup script
 
@@ -69,6 +69,19 @@ cd skills
 ```
 
 The script auto-detects Claude Code / Cursor / Codex (override with `--host <agent>`), installs the CLI if missing, checks auth, and symlinks each skill subdirectory into place. Idempotent.
+
+### Windows (Git Bash)
+
+`install.sh` supports macOS and Linux only. On Windows install the CLI with npm (or take `hf_<version>_windows_amd64.tar.gz` from the [CLI releases](https://github.com/higgsfield-ai/cli/releases), rename `hf.exe` to `higgsfield.exe` and put its folder on `PATH`):
+
+```bash
+npm install -g @higgsfield/cli
+higgsfield auth login
+```
+
+Run `./setup` from Git Bash. It links each skill with an NTFS junction (`mklink /J`), so `git pull` updates the installed skills. `--target-dir` accepts a custom skills folder, e.g. `./setup --host claude --target-dir "/d/skills"`.
+
+The faceless-video helpers call `python3`, `ffmpeg` and `ffprobe`; make sure `python3` resolves to a real interpreter, not the Microsoft Store alias. `presenter_composite.sh` also needs `pip install pillow numpy`.
 
 ## Verify
 

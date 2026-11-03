@@ -28,7 +28,8 @@ skills/
 ├── LICENSE
 ├── setup                              # bash, idempotent first-time install
 ├── scripts/
-│   └── update-check.sh                # opt-in version check
+│   ├── update-check.sh                # opt-in version check
+│   └── validate.sh                    # local mirror of CI + helper tests
 ├── .claude-plugin/
 │   ├── marketplace.json               # Claude Code marketplace
 │   └── plugin.json
@@ -142,6 +143,7 @@ A single repo-wide version must match every skill and plugin manifest:
 - `higgsfield-video-explainer/SKILL.md` — `version:` in frontmatter.
 - `higgsfield-brandkit/SKILL.md` — `version:` in frontmatter.
 - `higgsfield-websites/SKILL.md` — `version:` in frontmatter.
+- `higgsfield-faceless-video/SKILL.md` — `version:` in frontmatter.
 - `higgsfield-youtube-thumbnail/SKILL.md` — `version:` in frontmatter.
 - `.claude-plugin/marketplace.json` — `plugins[0].version`.
 - `.claude-plugin/plugin.json` — top-level `version`.

@@ -51,11 +51,11 @@ fi
 # Force UPPERCASE in the srt copy. python3 = Unicode-correct (Cyrillic etc.);
 # awk toupper is ASCII-only on mawk/BSD awk, so it is only the last-resort fallback.
 # --no-caps keeps the srt as authored (natural sentence case — the UGC-natural look).
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"; trap 'rm -rf "$TMP"' EXIT
 if [[ "$NOCAPS" == "1" ]]; then
   cp "$SRT" "$TMP/caps_upper.srt"
 elif command -v python3 >/dev/null 2>&1; then
-  python3 -c 'import sys; sys.stdout.write(open(sys.argv[1], encoding="utf-8", errors="replace").read().upper())' "$SRT" > "$TMP/caps_upper.srt"
+  python3 -c 'import sys; open(sys.argv[2], "w", encoding="utf-8").write(open(sys.argv[1], encoding="utf-8", errors="replace").read().upper())' "$SRT" "$TMP/caps_upper.srt"
 else
   echo "WARN: python3 not found — using awk toupper (ASCII-only: non-Latin text may stay lowercase)." >&2
   awk 'BEGIN{RS="";FS="\n"} {print toupper($0) "\n"}' "$SRT" > "$TMP/caps_upper.srt" 2>/dev/null || cp "$SRT" "$TMP/caps_upper.srt"

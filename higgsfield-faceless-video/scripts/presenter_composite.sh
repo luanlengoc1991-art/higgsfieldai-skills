@@ -28,6 +28,10 @@ if [[ "$STYLE" == "cutout" && ( "$POS" == "tr" || "$POS" == "tl" ) ]]; then
   echo "cutout is bottom-only (torso is cut at the frame edge) — use --pos br|bl or --style badge" >&2; exit 2
 fi
 for f in "$BLOCK" "$TALK"; do [[ -f "$f" ]] || { echo "missing input: $f" >&2; exit 2; }; done
+for b in ffmpeg ffprobe python3; do command -v "$b" >/dev/null 2>&1 || { echo "ERROR: '$b' not found" >&2; exit 2; }; done
+if ! python3 -c "import PIL, numpy" >/dev/null 2>&1; then
+  echo "ERROR: matte QC needs Python packages Pillow and numpy (pip install pillow numpy); this is a local setup issue, not a bad clip" >&2; exit 2
+fi
 
 probe() { ffprobe -v error -select_streams v:0 -show_entries stream="$2" -of csv=p=0 "$1"; }
 BW=$(probe "$BLOCK" width); BH=$(probe "$BLOCK" height)
@@ -65,7 +69,7 @@ else
 fi
 
 run_qc() { # $1 = CORE filter chain, $2 = bg alpha max -> prints metrics; rc 0/1
-  local png rc temp_dir; temp_dir=$(mktemp -d) || return 1; png="$temp_dir/matte.png"
+  local png rc temp_dir; temp_dir=$(mktemp -d) || return 1; command -v cygpath >/dev/null 2>&1 && temp_dir=$(cygpath -m "$temp_dir"); png="$temp_dir/matte.png"
   ffmpeg -y -v error -ss 2 -i "$TALK" -filter_complex "[0:v]$1" -frames:v 1 "$png" || { rmdir "$temp_dir"; return 1; }
   QC=$(python3 - "$png" "$2" <<'PY'
 import sys

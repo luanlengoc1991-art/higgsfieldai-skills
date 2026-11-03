@@ -105,6 +105,19 @@ esac
 
 [ -n "$TARGET_OVERRIDE" ] && TARGET_DIR="$TARGET_OVERRIDE"
 
+IS_WINDOWS=0
+case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=1 ;; esac
+
+# Directory link: real symlink on macOS/Linux; NTFS junction on Windows (Git Bash's `ln -s`
+# silently copies the folder, which would never pick up `git pull` updates).
+link_dir() {
+  if [ "$IS_WINDOWS" -eq 1 ]; then
+    cmd //c mklink //J "$(cygpath -w "$2")" "$(cygpath -w "$1")" >/dev/null
+  else
+    ln -s "$1" "$2"
+  fi
+}
+
 SKILLS=(higgsfield-generate higgsfield-soul-id higgsfield-product-photoshoot higgsfield-brandkit higgsfield-marketplace-cards higgsfield-websites higgsfield-faceless-video higgsfield-video-explainer higgsfield-youtube-thumbnail)
 
 ok "Detected host: $HOST"
@@ -118,7 +131,16 @@ if [ "$SKIP_CLI" -eq 0 ]; then
     ok "higgsfield CLI already installed: $HF_VERSION"
   else
     info "Installing higgsfield CLI…"
-    if curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh; then
+    if [ "$IS_WINDOWS" -eq 1 ]; then
+      # install.sh supports macOS/Linux only; on Windows use the npm package.
+      if command -v npm &>/dev/null && npm install -g @higgsfield/cli; then
+        ok "higgsfield CLI installed (npm @higgsfield/cli)"
+      else
+        err "higgsfield CLI install failed. On Windows run: npm install -g @higgsfield/cli"
+        info "Or download hf_<version>_windows_amd64.tar.gz from https://github.com/higgsfield-ai/cli/releases, rename hf.exe to higgsfield.exe and put it on PATH."
+        exit 1
+      fi
+    elif curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh; then
       ok "higgsfield CLI installed"
     else
       err "higgsfield CLI install failed. Try manually: curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh"
@@ -161,13 +183,13 @@ for skill in "${SKILLS[@]}"; do
     else
       info "$skill: replacing stale symlink"
       rm "$dst"
-      ln -s "$src" "$dst"
+      link_dir "$src" "$dst"
       ok "$skill symlinked"
     fi
   elif [ -e "$dst" ]; then
     warn "$dst exists but is not a symlink to $src — leaving alone."
   else
-    ln -s "$src" "$dst"
+    link_dir "$src" "$dst"
     ok "$skill symlinked"
   fi
 done

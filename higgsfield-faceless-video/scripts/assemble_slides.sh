@@ -48,7 +48,7 @@ if [[ -n "$AUDIO" ]]; then
   [[ -f "$AUDIO" ]] || { echo "ERROR: --audio not found: $AUDIO" >&2; exit 1; }
   [[ -n "$MUSIC" && ! -f "$MUSIC" ]] && { echo "ERROR: --music file not found: $MUSIC" >&2; exit 1; }
   ASSEMBLY_ATTEMPT=1
-  TMP="$(mktemp -d)"
+  TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"
   trap 'rm -rf "$TMP"' EXIT
   FR_IMG=(); FR_DUR=(); FR_BEAT=(); FR_START=(); FR_END=()
   if [[ -n "$TIMELINE" ]]; then
@@ -58,6 +58,7 @@ if [[ -n "$AUDIO" ]]; then
     python3 - "$TIMELINE" > "$TMP/timeline.tsv" <<'PY'
 import json
 import sys
+sys.stdout.reconfigure(encoding="utf-8", newline="\n")
 
 payload = json.load(open(sys.argv[1], encoding="utf-8"))
 if payload.get("manifest_version") != 2:
@@ -108,7 +109,18 @@ PY
     done < "$TMP/timeline.tsv"
   elif [[ -n "$MANIFEST" ]]; then
     [[ -f "$MANIFEST" ]] || { echo "ERROR: --manifest not found: $MANIFEST" >&2; exit 1; }
-    while read -r im du _extra; do
+    # Lines: "image <seconds>". The image path may contain spaces (duration is the last field),
+    # or the two fields may be TAB-separated.
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      line="${line%$'\r'}"
+      im=""; du=""
+      if [[ "$line" == *$'\t'* ]]; then
+        IFS=$'\t' read -r im du _extra <<< "$line"
+      elif [[ "$line" =~ ^[[:space:]]*(.*[^[:space:]])[[:space:]]+([0-9]+(\.[0-9]+)?)[[:space:]]*$ ]]; then
+        im="${BASH_REMATCH[1]}"; du="${BASH_REMATCH[2]}"
+      else
+        read -r im du _extra <<< "$line" || true
+      fi
       [[ -z "$im" || "$im" == \#* ]] && continue
       [[ -n "$du" ]] || { echo "ERROR: --audio manifest line needs 'image <seconds>': '$im'" >&2; exit 1; }
       FR_IMG+=("$im"); FR_DUR+=("$du"); FR_BEAT+=("0"); FR_START+=("0"); FR_END+=("0")
@@ -241,7 +253,15 @@ fi
 
 if [[ -n "$MANIFEST" ]]; then
   [[ -f "$MANIFEST" ]] || { echo "ERROR: --manifest not found: $MANIFEST" >&2; exit 1; }
-  while read -r f1 f2 f3 _extra; do
+  # Lines: "slide voice" or "slide1 slide2 voice"; use TABs between fields when paths contain spaces.
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    f1=""; f2=""; f3=""
+    if [[ "$line" == *$'\t'* ]]; then
+      IFS=$'\t' read -r f1 f2 f3 _extra <<< "$line"
+    else
+      read -r f1 f2 f3 _extra <<< "$line" || true
+    fi
     [[ -z "$f1" || "$f1" == \#* ]] && continue
     if [[ -n "$f3" ]]; then ARGS+=("$f1|$f2" "$f3")
     elif [[ -n "$f2" ]]; then ARGS+=("$f1" "$f2")
@@ -258,7 +278,7 @@ fi
 [[ -z "$BLOCKS" ]] && { echo "ERROR: --blocks N is REQUIRED — pass the expected beat count (a dropped beat must FAIL, not ship; short runs included)." >&2; exit 1; }
 [[ -n "$MUSIC" && ! -f "$MUSIC" ]] && { echo "ERROR: --music file not found: $MUSIC" >&2; exit 1; }
 
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"; trap 'rm -rf "$TMP"' EXIT
 PBJSON=()   # per-beat sidecar entries (machine-readable assembly manifest)
 img0="${ARGS[0]%%|*}"   # first image (strip the X2 "|imgB" part if line 1 is a triple)
 DIMS="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$img0")"

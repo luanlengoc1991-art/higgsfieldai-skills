@@ -36,7 +36,7 @@ done
 [[ -n "$REQUESTED_SECONDS" ]] || { echo "ERROR: --requested-seconds is required" >&2; exit 1; }
 [[ -n "$OUT" ]] || { echo "ERROR: --out is required" >&2; exit 1; }
 
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"
 cleanup() {
   rm -rf "$TMP"
 }
@@ -108,9 +108,9 @@ for index, segment in enumerate(segments, start=1):
         segment_lines.append(f"{index}\t{start}\t{end}\tparts\t")
     previous_end = end
 
-pathlib.Path(segments_path).write_text("\n".join(segment_lines) + "\n")
+pathlib.Path(segments_path).write_text("\n".join(segment_lines) + "\n", encoding="utf-8", newline="\n")
 pathlib.Path(parts_path).write_text(
-    ("\n".join(part_lines) + "\n") if part_lines else ""
+    ("\n".join(part_lines) + "\n") if part_lines else "", encoding="utf-8", newline="\n"
 )
 PY
 

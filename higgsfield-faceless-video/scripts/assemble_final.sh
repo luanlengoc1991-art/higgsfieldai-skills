@@ -25,8 +25,18 @@ done
 [[ -z "$SOFT_BLOCKS" || "$SOFT_BLOCKS" =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]] || { echo "ERROR: --accept-soft-blocks requires comma-separated block numbers" >&2; exit 1; }
 if [[ -n "$MANIFEST" ]]; then
   [[ -f "$MANIFEST" ]] || { echo "ERROR: --manifest not found: $MANIFEST" >&2; exit 1; }
-  while read -r mc mv _extra; do
-    [[ -z "$mc" || "$mc" == \#* ]] && continue
+  # Lines: "clip" (--song) or "clip voice". Paths containing spaces work when the line is a
+  # single existing file, or when clip and voice are separated by a TAB.
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    if [[ "$line" == *$'\t'* ]]; then
+      IFS=$'\t' read -r mc mv _extra <<< "$line"
+    elif [[ -n "$line" && -f "$line" ]]; then
+      mc="$line"; mv=""
+    else
+      read -r mc mv _extra <<< "$line" || true
+    fi
+    [[ -z "${mc:-}" || "$mc" == \#* ]] && continue
     if [[ -n "$SONG" ]]; then
       [[ -n "$mv" ]] && { echo "ERROR: --song manifest lines carry ONE clip each (no voice files): '$mc $mv'" >&2; exit 1; }
       ARGS+=("$mc")
@@ -108,7 +118,7 @@ fi
 
 FINAL_OUT="$OUT"
 ASSEMBLY_ATTEMPT=1
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d)"; command -v cygpath >/dev/null 2>&1 && TMP="$(cygpath -m "$TMP")"
 cleanup() {
   rm -rf "$TMP"
 }
