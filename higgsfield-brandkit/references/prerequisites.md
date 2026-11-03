@@ -49,6 +49,18 @@ sudo apt-get install -y imagemagick librsvg2-bin poppler-utils fontconfig libreo
 npx --yes playwright@1.62.1 install --with-deps chromium
 ```
 
+## Windows
+
+Ask before running. Use MSYS2 (UCRT64) for the command-line tools and append its `ucrt64\bin` to the end of `PATH`, so it does not shadow the existing Python or Git:
+
+```bash
+pacman -S --needed mingw-w64-ucrt-x86_64-imagemagick mingw-w64-ucrt-x86_64-librsvg mingw-w64-ucrt-x86_64-poppler mingw-w64-ucrt-x86_64-fontconfig
+winget install --id TheDocumentFoundation.LibreOffice
+npx --yes playwright@1.62.1 install chromium
+```
+
+Add LibreOffice's `program` folder to `PATH` for `soffice`. Windows ships an unrelated `C:\Windows\System32\convert.exe`; the bundled scripts ignore it and require `magick`.
+
 When `sudo` or package installation is unavailable, continue only with stages whose dependencies already exist. State clearly which export or review format cannot be produced.
 
 ## Higgsfield setup
